@@ -380,11 +380,7 @@ qed.
 (***    Defining rounding and lifting functions and lemmas about relations    ***)
 (********************************************************************************)
 
-op rnd2ZP (z: ZQ.zmod) = ZP.inzmod (floor ((p%r/q%r) * (ZQ.asint z)%r)).
-op rndv2ZP (z: zqvector) = MatZP.Vectors.offunv (fun (i: int) => rnd2ZP z.[i], size z).
-op lift2ZQ (z: ZP.zmod) = ZQ.inzmod (ZP.asint z) * ZQ.inzmod (q %/ p).
-op liftv2ZQ (z: zpvector) = MatZQ.Vectors.offunv (fun (i: int) => lift2ZQ z.[i], size z).
-
+(* Defining all operators *)
 op ZP2ZQ (z : ZP.zmod) = ZQ.inzmod (ZP.asint z).
 op Z22ZP (z: Z2.zmod) = ZP.inzmod (Z2.asint z).
 op Z22ZQ (z: Z2.zmod) = ZQ.inzmod (Z2.asint z).
@@ -392,13 +388,19 @@ op ZPv2ZQ (z: zpvector) = MatZQ.Vectors.offunv (fun (i: int) => ZP2ZQ z.[i], siz
 op Z2v2ZP (z: z2vector) = MatZP.Vectors.offunv (fun (i: int) => Z22ZP z.[i], size z).
 op Z2v2ZQ (z: z2vector) = MatZQ.Vectors.offunv (fun (i: int) => Z22ZQ z.[i], size z).
 
+op rnd2ZP (z: ZQ.zmod) = ZP.inzmod (floor ((p%r/q%r) * (ZQ.asint z)%r)).
+op rndv2ZP (z: zqvector) = MatZP.Vectors.offunv (fun (i: int) => rnd2ZP z.[i], size z).
+op lift2ZQ (z: ZP.zmod) = ZQ.inzmod (ZP.asint z) * ZQ.inzmod (q %/ p).
+op liftv2ZQ (z: zpvector) = MatZQ.Vectors.offunv (fun (i: int) => lift2ZQ z.[i], size z).
 
+(* Size lemmas for modulus conversion *)
 lemma size_Z2v2ZQ (z: z2vector) : size (Z2v2ZQ z) = size z by rewrite size_offunv /#.
 
 lemma size_Z2v2ZP (z: z2vector) : size (Z2v2ZP z) = size z by rewrite size_offunv /#.
     
 lemma size_ZPv2ZQ (z: zpvector) : size (ZPv2ZQ z) = size z by rewrite size_offunv /#.
-    
+
+(* Properties of the rounding operator *)
 lemma size_rndv (z: zqvector) : size (rndv2ZP z) = size z by rewrite /rndv2ZP size_offunv /#.
 
 lemma rndvE (z: zqvector) (i: int) : 0 <= i < size z => (rndv2ZP z).[i] = rnd2ZP z.[i].
@@ -455,6 +457,7 @@ rewrite MatZQ.ZR.add0r MatZP.ZR.add0r //.
 rewrite rndvE //; first smt().
 qed.
 
+(* Properties of the lifting operator *)
 lemma size_liftv (z: zpvector) : size (liftv2ZQ z) = size z by rewrite size_offunv /#.
 
 lemma liftvE (z: zpvector) (i: int) : 0 <= i < size z => (liftv2ZQ z).[i] = lift2ZQ z.[i].
@@ -464,6 +467,7 @@ rewrite /liftv2ZQ offunvE.
 apply bound. smt().
 qed.
 
+(* Decomposition of elements in Zq and its properties *)
 op multiple (z: ZQ.zmod) = ((ZQ.asint z) %/ (q %/ p)).
 
 op remainder (z: ZQ.zmod) = ((ZQ.asint z) %% (q %/ p)).
@@ -499,7 +503,8 @@ have : (floor (p%r * (asint z)%r / q%r))%r <= (p%r * (asint z)%r / q%r). by appl
 move => H1.
 smt.
 qed.    
-    
+
+(* Lemmas about the form of the result after rounding or/and lifting an element or vector *)
 lemma rnd_form (z: ZQ.zmod) : rnd2ZP z = ZP.inzmod (multiple z).
 proof.
 rewrite /rnd2ZP /multiple. print floorE.
@@ -551,6 +556,7 @@ rewrite lift_rnd_form.
 rewrite offunvE //=.
 qed.
 
+(* Defining the error of rounding and lifting an element or vector and their bound *)
 op rnd_err (z: ZQ.zmod) = z - (lift2ZQ (rnd2ZP z)).
 
 lemma rnd_err_bound (z: ZQ.zmod) : 0 <= ZQ.asint (rnd_err z) < `|q %/ p|.
@@ -597,6 +603,7 @@ apply bound.
 rewrite rnd_err_bound.
 qed.
 
+(* Introducing operators for the error of lifting or rounding the message term *)
 op floor_half_lift_err = if 2 %| p then (if 2 %| q then 0%r else (1%r/2%r))
   else (if 2 %| q then (-q%r/(2*p)%r) else ((p-q)%r/(2*p)%r)).
 
@@ -628,6 +635,7 @@ case (2 %| q) => H1.
 smt. smt.
 qed.
 
+(* Specific lemmas about dotp, lifting and rounding for security proof *)
 lemma v'_eq (z1: z2vector) (z2: zqvector) : size z1 = size z2 =>
     rnd2ZP (dotp (Z2v2ZQ z1) (liftv2ZQ (rndv2ZP z2))) = dotp (Z2v2ZP z1) (rndv2ZP z2).
 proof.
@@ -656,6 +664,7 @@ rewrite /rnd2ZP.
 admit.
 qed.
 
+(* Specific lemmas about dotp, lifting and rounding for correctness proof *)
 lemma rndv_liftv_dotp (z1: z2vector) (z2: zqvector) : size z1 = size z2 =>
     lift2ZQ (rnd2ZP (dotp (Z2v2ZQ z1) (liftv2ZQ (rndv2ZP z2)))) = dotp (Z2v2ZQ z1) (liftv2ZQ (rndv2ZP z2)).
 proof.
@@ -869,7 +878,6 @@ hoare[Correctness(LWRpke').main:
           true ==> distmodq LWRpke'.er ZQ.zero < q %/ 4 => res].  
 proof. 
 proc;inline*. 
-
 (*** We show that decryption is correct if total error is less than q/4       ***)
 seq 23 : (d = LWRpke'.er + (ZQ.inzmod ((b2i m) * (q %/ 2)) ) ) => //; first last.
 case (distmodq LWRpke'.er ZQ.zero < q %/ 4); auto => /> &hr H0. 
