@@ -146,7 +146,7 @@ lemma dz2u_fu  : is_full     dz2u by rewrite /dz2u dunifin_fu.
 lemma mu1_dz2u (z:Z2.zmod) : mu1 dz2u z = 1%r/2%r by smt(@DZmodP).
     
 
-(* Operator giving distance between two numbers modulo q *)
+(* Operator giving distance between two numbers modulo q and its properties*)
 op distmodq (a b : ZQ.zmod) = 
     min (`|asint a - asint b|) (q - `|asint a - asint b|).
 
@@ -221,9 +221,10 @@ qed.
 lemma inzmod0: ZQ.inzmod 0 = ZQ.zero by rewrite -ZQ.zeroE ZQ.asintK.
 
 (********************************************************************************)
-(***      Defining scalar multiplication (needed until Mat.ec is updated)     ***)
+(***    Proving missing matrix and vector properties (also added in Mat.ec)   ***)
 (********************************************************************************)
 
+(* Scalar multiplication for matrices and lemmas about properties *)
 op mulmxs (m: zqmatrix) (s: ZQ.zmod) = m * diagc (cols m) s.
 
 lemma rows_mulmxs (m: zqmatrix) (s: ZQ.zmod): rows (mulmxs m s) = rows m.
@@ -268,7 +269,8 @@ rewrite MatZQ.ZR.addr0.
 rewrite inzmodM //=. do rewrite asintK.
 trivial.
 qed.
-    
+
+(* Scalar multiplication for vectors and lemmas about properties *)
 op mulvs (z: zqvector) (s: ZQ.zmod) = col (mulmxs (colmx z) s) 0.
 
 lemma size_mulvs (z: zqvector) (s: ZQ.zmod): size (mulvs z s) = size z.
@@ -312,6 +314,7 @@ rewrite MatZQ.ZR.mulrA //.
 trivial.
 qed.
 
+(* Exxtended module-like properties of vectors *)
 lemma oppvD (v1 v2: zqvector): size v1 = size v2 => -(v1 + v2) = -v1 + -v2.
 proof.
 move => eq_size.
@@ -337,9 +340,44 @@ rewrite 2!getvN.
 by rewrite MatZQ.ZR.opprK.
 qed.
 
+(* relation between concatenation and subm of matrices *)
+lemma concat_down_subm_rowmx (m: zqmatrix): 0 < rows m =>
+    m = subm m 0 (rows m -1) 0 (cols m) / rowmx (row m (rows m -1)).
+proof.
+move => bound.
+  rewrite eq_matrixP; split.
+rewrite size_concat_down.
+rewrite cols_subm cols_rowmx.
+rewrite size_row /#.
+rewrite rows_subm cols_subm rows_rowmx /=.
+have ->: max 0 (rows m - 1) = (rows m - 1) by smt().
+by simplify.
+move => i j mrange.
+rewrite concat_downE.
+rewrite cols_subm cols_rowmx.
+smt().
+rewrite rows_subm /=.
+have ->: max 0 (rows m - 1) = (rows m - 1) by smt().
+case (0 <= i < rows m - 1) => bound_i.
+rewrite submE. 
+smt().
+smt().
+have ->: (rowmx (row m (rows m - 1))).[i - (rows m - 1), j] = ZQ.zero.
+rewrite getm0E.
+smt(). done.
+simplify.
+by rewrite MatZQ.ZR.addr0.
+have ->: i = rows m - 1 by smt().
+have ->: (subm m 0 (rows m - 1) 0 (cols m)).[rows m - 1, j] = ZQ.zero.
+rewrite getm0E.
+smt(). done.
+simplify.
+by rewrite MatZQ.ZR.add0r.
+qed.
+
 
 (********************************************************************************)
-(***                Defining rounding and lifting functions                   ***)
+(***    Defining rounding and lifting functions and lemmas about relations    ***)
 (********************************************************************************)
 
 op rnd2ZP (z: ZQ.zmod) = ZP.inzmod (floor ((p%r/q%r) * (ZQ.asint z)%r)).
@@ -360,15 +398,6 @@ lemma size_Z2v2ZQ (z: z2vector) : size (Z2v2ZQ z) = size z by rewrite size_offun
 lemma size_Z2v2ZP (z: z2vector) : size (Z2v2ZP z) = size z by rewrite size_offunv /#.
     
 lemma size_ZPv2ZQ (z: zpvector) : size (ZPv2ZQ z) = size z by rewrite size_offunv /#.
-
-lemma size_liftv (z: zpvector) : size (liftv2ZQ z) = size z by rewrite size_offunv /#.
-
-lemma liftvE (z: zpvector) (i: int) : 0 <= i < size z => (liftv2ZQ z).[i] = lift2ZQ z.[i].
-proof.
-move => bound.
-rewrite /liftv2ZQ offunvE.
-apply bound. smt().
-qed.
     
 lemma size_rndv (z: zqvector) : size (rndv2ZP z) = size z by rewrite /rndv2ZP size_offunv /#.
 
@@ -424,6 +453,15 @@ have ->: (rndv2ZP z1).[i] = ZP.zero.
 rewrite MatZP.Vectors.getv0E //. rewrite size_rndv /#.
 rewrite MatZQ.ZR.add0r MatZP.ZR.add0r //.
 rewrite rndvE //; first smt().
+qed.
+
+lemma size_liftv (z: zpvector) : size (liftv2ZQ z) = size z by rewrite size_offunv /#.
+
+lemma liftvE (z: zpvector) (i: int) : 0 <= i < size z => (liftv2ZQ z).[i] = lift2ZQ z.[i].
+proof.
+move => bound.
+rewrite /liftv2ZQ offunvE.
+apply bound. smt().
 qed.
 
 op multiple (z: ZQ.zmod) = ((ZQ.asint z) %/ (q %/ p)).
@@ -1093,39 +1131,6 @@ wp; call (_: true); auto.
 call (_: true); auto.
 qed.
 
-lemma concat_down_subm_rowmx (m: zqmatrix): 0 < rows m => m = subm m 0 (rows m -1) 0 (cols m) / rowmx (row m (rows m -1)).
-proof.
-move => bound.
-  rewrite eq_matrixP; split.
-rewrite size_concat_down.
-rewrite cols_subm cols_rowmx.
-rewrite size_row /#.
-rewrite rows_subm cols_subm rows_rowmx /=.
-have ->: max 0 (rows m - 1) = (rows m - 1) by smt().
-by simplify.
-move => i j mrange.
-rewrite concat_downE.
-rewrite cols_subm cols_rowmx.
-smt().
-rewrite rows_subm /=.
-have ->: max 0 (rows m - 1) = (rows m - 1) by smt().
-case (0 <= i < rows m - 1) => bound_i.
-rewrite submE. 
-smt().
-smt().
-have ->: (rowmx (row m (rows m - 1))).[i - (rows m - 1), j] = ZQ.zero.
-rewrite getm0E.
-smt(). done.
-simplify.
-by rewrite MatZQ.ZR.addr0.
-have ->: i = rows m - 1 by smt().
-have ->: (subm m 0 (rows m - 1) 0 (cols m)).[rows m - 1, j] = ZQ.zero.
-rewrite getm0E.
-smt(). done.
-simplify.
-by rewrite MatZQ.ZR.add0r.
-qed.
-
 lemma g1_g2_eq &m:
     Pr[G1.main() @ &m : res] =
     Pr[G2.main() @ &m : res].
@@ -1173,7 +1178,7 @@ auto.
 progress.
 rewrite MatZQ.Matrices.dvector_ll.
 rewrite dzqu_ll.
-admit. admit. (* leftover hash lemma *)
+admit. admit. (* requires the leftover hash lemma *)
 qed.
 
 lemma g3_g4_eq &m:

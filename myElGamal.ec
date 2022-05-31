@@ -47,7 +47,7 @@ module ElGamal: Scheme = {
   }  
 }.
 
-lemma elgamal_correctness &m: forall (m: ptxt), Pr[Correctness(ElGamal).main(m) @ &m : res] = 1%r.
+lemma elgamal_correctness &m : forall (m: ptxt), Pr[Correctness(ElGamal).main(m) @ &m : res] = 1%r.
     proof.
     move => m.
 byphoare => //; proc; inline *.
@@ -114,7 +114,7 @@ module G1 (A: Adversary) = {
   }
 }.
 
-lemma g1_half &m (A <: Adversary):
+lemma g1_half &m (A <: Adversary) :
     islossless A.choose => islossless A.guess =>
     Pr[G1(A).main() @ &m : res] = 1%r/2%r.
 proof.
@@ -127,7 +127,7 @@ conseq (: _ ==> true).
 by islossless; apply dinter_ll; rewrite -ltzS /= order_gt0.
 qed.
 
-lemma ddh0_g0_eq &m (A <: Adversary):
+lemma ddh0_g0_eq &m (A <: Adversary) :
     Pr[CPA(ElGamal, A).main() @ &m : res] =
     Pr[DDH0(Red_A_EG_DDH(A)).main() @ &m : res].
 proof.
@@ -139,7 +139,7 @@ auto => /> sk _ y _ r b _.
 rewrite expM mulcC //.
 qed.
 
-lemma ddh1_g1_eq &m (A <: Adversary):
+lemma ddh1_g1_eq &m (A <: Adversary) :
     Pr[G1(A).main() @ &m : res] =
     Pr[DDH1(Red_A_EG_DDH(A)).main() @ &m : res].
 proof.
@@ -159,7 +159,7 @@ rewrite pmod_small //=. smt().
 smt(expD expg_modz logVr expgK).
 qed.
 
-lemma conclusion &m (A <: Adversary):
+lemma conclusion &m (A <: Adversary) :
     islossless A.choose => islossless A.guess =>
   `| Pr[CPA(ElGamal, A).main() @ &m : res] - 1%r/2%r | =
   `| Pr[DDH0(Red_A_EG_DDH(A)).main() @ &m : res] -

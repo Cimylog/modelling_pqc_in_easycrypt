@@ -6,18 +6,18 @@ op id : ringEl.
 op [-] : ringEl -> ringEl.
 abbrev (-) (x y : ringEl) = x + -y.
 
-axiom ringAddR0: forall (x : ringEl), x + id = x.
-axiom ringAddLI: forall (x : ringEl), - x + x = id.
+axiom ringAddR0 : forall (x : ringEl), x + id = x.
+axiom ringAddLI : forall (x : ringEl), - x + x = id.
 axiom ringAddC : forall (x y : ringEl), x + y = y + x.
 axiom ringAddA : forall (x y z: ringEl), (x + y) + z = x + (y + z).
 
-lemma ringAddE (x y z : ringEl): x = y => x + z = y + z.
+lemma ringAddE (x y z : ringEl) : x = y => x + z = y + z.
 proof.
 move => xy_eq.
 rewrite xy_eq. trivial.
 qed.
 
-lemma ringAddK (x y : ringEl): (x - y) + y = x
+lemma ringAddK (x y : ringEl) : (x - y) + y = x
   by rewrite ringAddA ringAddLI ringAddR0.
 
 
@@ -49,7 +49,7 @@ qed.
 
 op dbool : bool distr.
 
-axiom dboolE (E : bool -> bool):
+axiom dboolE (E : bool -> bool) :
  mu dbool E = (if E true  then 1%r/2%r else 0%r)
             + (if E false then 1%r/2%r else 0%r).
 axiom dbool_ll : is_lossless dbool.
@@ -63,7 +63,7 @@ module Random_bit = {
     }
 }.
 
-lemma random_bit_half &m:
+lemma random_bit_half &m :
     phoare[Random_bit.main : true ==> res] = (1%r / 2%r).
 proof.
 proc.
